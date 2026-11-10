@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balatec Secure Wallet & Expenses</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        leather: {
+                            dark: '#2C1810',
+                            DEFAULT: '#4A2E1B',
+                            light: '#8C5830',
+                            accent: '#D4A373',
+                            bg: '#F9F6F0'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, setDoc, doc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-Placeholder-Key",
+            authDomain: "balatec-wallet.firebaseapp.com",
+            projectId: "balatec-wallet",
+            storageBucket: "balatec-wallet.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456:web:abcdef"
+        };
+
+        let db = null;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            window.isFirebaseInitialized = true;
+            window.db = db;
+            window.dbOps = { collection, addDoc, getDocs, setDoc, doc, deleteDoc, onSnapshot };
+        } catch (e) {
+            console.warn("Mode Hors Ligne / Firebase non configuré : Fonctionnement en local uniquement.", e);
+            window.isFirebaseInitialized = false;
+        }
+    </script>
+    <style>
+        .leather-card {
+            background: linear-gradient(135deg, #4A2E1B 0%, #2C1810 100%);
+            color: #F9F6F0;
+        }
+    </style>
+</head>
+<body class="bg-leather-bg text-stone-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <header class="leather-card shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-leather-accent text-leather-dark p-2 rounded-lg font-bold text-sm sm:text-base">
+                    BF
+                </div>
+                <div>
+                    <h1 class="text-sm sm:text-lg font-bold tracking-wide">Balatec Secure Wallet</h1>
+                    <p class="text-xs text-leather-accent flex items-center gap-1">
+                        <span id="sync-status-dot" class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span>
+                        <span id="sync-status-text">Mode Hors Ligne (IndexedDB)</span>
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="app.toggleSyncMode()" id="sync-btn" class="text-xs bg-leather-light hover:bg-leather-accent text-white px-3 py-1.5 rounded transition">
+                    Synchroniser
+                </button>
+                <div class="text-xs bg-stone-900/40 px-2.5 py-1 rounded border border-leather-light/30">
+                    FR
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl w-full mx-auto px-4 py-4 flex-grow space-y-4">
+
+        <section class="leather-card rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
+            <div class="absolute -right-6 -bottom-6 opacity-10 text-9xl font-bold">BF</div>
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-xs sm:text-sm text-leather-accent uppercase tracking-wider font-medium">Patrimoine Net Total</p>
+                    <h2 class="text-2xl sm:text-4xl font-extrabold mt-1" id="total-net-worth">$0.00</h2>
+                </div>
+                <button onclick="app.openTransactionModal()" class="bg-leather-accent hover:bg-white text-leather-dark p-3 rounded-full shadow-lg transition transform hover:scale-105 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mt-4 pt-4 border-t border-leather-light/30 flex justify-between text-xs sm:text-sm">
+                <div>
+                    <span class="text-leather-accent">Comptes Principaux:</span>
+                    <span id="account-summary-count" class="font-semibold ml-1">0 actifs</span>
+                </div>
+                <div>
+                    <span class="text-leather-accent">Dernière Synchro:</span>
+                    <span id="last-sync-time" class="font-semibold ml-1">Jamais</span>
+                </div>
+            </div>
+        </section>
+
+        <nav class="flex bg-white rounded-xl p-1.5 shadow-sm border border-stone-200 text-xs sm:text-sm justify-between">
+            <button onclick="app.switchTab('transactions')" id="nav-btn-transactions" class="flex-1 py-2 font-semibold rounded-lg bg-stone-100 text-leather-dark text-center transition">
+                Transactions
+            </button>
+            <button onclick="app.switchTab('accounts')" id="nav-btn-accounts" class="flex-1 py-2 font-medium rounded-lg text-stone-600 hover:text-leather-dark text-center transition">
+                Comptes
+            </button>
+            <button onclick="app.switchTab('insights')" id="nav-btn-insights" class="flex-1 py-2 font-medium rounded-lg text-stone-600 hover:text-leather-dark text-center transition">
+                Indicateurs & Liquidité
+            </button>
+        </nav>
+
+        <div id="tab-transactions" class="space-y-3">
+            <div class="flex flex-col sm:flex-row gap-2 justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-stone-200">
+                <input type="text" id="search-input" oninput="app.filterTransactions()" placeholder="Rechercher par libellé, marchand, bénéficiaire..." class="w-full sm:w-64 px-3 py-1.5 text-xs sm:text-sm bg-stone-50 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-leather-light text-stone-800">
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <select id="filter-account" onchange="app.filterTransactions()" class="flex-1 sm:w-auto px-3 py-1.5 text-xs sm:text-sm bg-stone-50 border border-stone-300 rounded-lg text-stone-800">
+                        <option value="">Tous les comptes</option>
+                    </select>
+                    <button onclick="app.exportPDF()" class="bg-stone-800 text-white px-3 py-1.5 text-xs sm:text-sm rounded-lg hover:bg-stone-700 transition flex items-center gap-1">
+                        PDF / Imprimer
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                <div id="transactions-list" class="divide-y divide-stone-100">
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-accounts" class="hidden space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="accounts-grid">
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+                <h3 class="font-bold text-sm sm:text-base text-leather-dark mb-2">Options de Transfert Rapide</h3>
+                <div class="flex gap-2">
+                    <span class="text-xs bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-medium">TapTap Send (CFA - XOF)</span>
+                    <span class="text-xs bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full font-medium">MoneyGram (CFA - XOF)</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-insights" class="hidden space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+                    <h3 class="text-xs sm:text-sm font-bold text-stone-600 uppercase">Métriques de Liquidité</h3>
+                    <div class="mt-3 space-y-2 text-sm" id="liquidity-metrics">
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+                    <h3 class="text-xs sm:text-sm font-bold text-stone-600 uppercase">Répartition par Catégorie</h3>
+                    <div class="mt-3 space-y-2 text-sm" id="category-insights">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="transaction-modal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-stone-200">
+            <div class="leather-card px-4 py-3 flex justify-between items-center">
+                <h3 id="modal-title" class="font-bold text-sm sm:text-base">Nouvelle Transaction</h3>
+                <button onclick="app.closeTransactionModal()" class="text-leather-accent hover:text-white font-bold text-lg">&times;</button>
+            </div>
+            <form id="transaction-form" onsubmit="app.saveTransaction(event)" class="p-4 space-y-3 text-xs sm:text-sm">
+                <input type="hidden" id="tx-id">
+                <div>
+                    <label class="block font-medium text-stone-700 mb-1">Compte</label>
+                    <select id="tx-account" required class="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-lg text-stone-800 focus:ring-2 focus:ring-leather-light">
+                        <option value="Bonus">Bonus</option>
+                        <option value="Bamako">Bamako (CFA)</option>
+                        <option value="Abidjan">Abidjan (CFA)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-stone-700 mb-1">Montant ($ ou XOF)</label>
+                    <input type="number" step="0.01" id="tx-amount" required class="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-lg text-stone-800">
+                </div>
+                <div>
+                    <label class="block font-medium text-stone-700 mb-1">Type de Transaction / Bénéficiaire</label>
+                    <input type="text" id="tx-payee" placeholder="Ex: TapTap Send, MoneyGram, Marchand..." required class="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-lg text-stone-800">
+                </div>
+                <div>
+                    <label class="block font-medium text-stone-700 mb-1">Catégorie</label>
+                    <select id="tx-category" required class="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-lg text-stone-800">
+                        <option value="Famille">Famille</option>
+                        <option value="Transfert">Transfert (TapTap / MoneyGram)</option>
+                        <option value="Alimentation">Alimentation</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-stone-700 mb-1">Notes / Description</label>
+                    <input type="text" id="tx-note" class="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-lg text-stone-800">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="app.closeTransactionModal()" class="px-4 py-2 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300 transition">Annuler</button>
+                    <button type="submit" class="px-4 py-2 leather-card text-white rounded-lg hover:opacity-90 transition">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        class BalatecWalletApp {
+            constructor() {
+                this.dbName = "BalatecWalletDB";
+                this.dbVersion = 1;
+                this.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
+                this.transactions = [];
+                this.accounts = [
+                    { name: 'Bonus', balance: 1450.00, currency: 'USD' },
+                    { name: 'Bamako', balance: 350000.00, currency: 'XOF' },
+                    { name: 'Abidjan', balance: 210000.00, currency: 'XOF' }
+                ];
+                this.currentTab = 'transactions';
+                this.init();
+            }
+
+            async init() {
+                await this.initIndexedDB();
+                await this.loadLocalData();
+                this.render();
+                this.setupSyncListener();
+            }
+
+            initIndexedDB() {
+                return new Promise((resolve, reject) => {
+                    const request = this.indexedDB.open(this.dbName, this.dbVersion);
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => {
+                        this.idb = request.result;
+                        resolve(this.idb);
+                    };
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains('transactions')) {
+                            db.createObjectStore('transactions', { keyPath: 'id', autoIncrement: true });
+                        }
+                        if (!db.objectStoreNames.contains('accounts')) {
+                            db.createObjectStore('accounts', { keyPath: 'name' });
+                        }
+                    };
+                });
+            }
+
+            async loadLocalData() {
+                return new Promise((resolve) => {
+                    const transaction = this.idb.transaction(['transactions', 'accounts'], 'readonly');
+                    
+                    const txStore = transaction.objectStore('transactions');
+                    const txReq = txStore.getAll();
+                    txReq.onsuccess = () => {
+                        this.transactions = txReq.result.length ? txReq.result : [
+                            { id: 1, account: 'Bonus', amount: 500, payee: 'Salaire', category: 'Famille', note: 'Prime Shift', date: new Date().toISOString() },
+                            { id: 2, account: 'Bamako', amount: 65000, payee: 'TapTap Send', category: 'Transfert', note: 'Soutien famille', date: new Date().toISOString() }
+                        ];
+                    };
+
+                    const accStore = transaction.objectStore('accounts');
+                    const accReq = accStore.getAll();
+                    accReq.onsuccess = () => {
+                        if (accReq.result.length) {
+                            this.accounts = accReq.result;
+                        } else {
+                            this.accounts.forEach(acc => {
+                                const writeTx = this.idb.transaction(['accounts'], 'readwrite');
+                                writeTx.objectStore('accounts').put(acc);
+                            });
+                        }
+                        resolve();
+                    };
+                });
+            }
+
+            saveToIndexedDB(storeName, item) {
+                const tx = this.idb.transaction([storeName], 'readwrite');
+                tx.objectStore(storeName).put(item);
+            }
+
+            deleteFromIndexedDB(storeName, id) {
+                const tx = this.idb.transaction([storeName], 'readwrite');
+                tx.objectStore(storeName).delete(id);
+            }
+
+            switchTab(tabName) {
+                this.currentTab = tabName;
+                ['transactions', 'accounts', 'insights'].forEach(t => {
+                    document.getElementById(`tab-${t}`).classList.add('hidden');
+                    document.getElementById(`nav-btn-${t}`).className = "flex-1 py-2 font-medium rounded-lg text-stone-600 hover:text-leather-dark text-center transition";
+                });
+                document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+                document.getElementById(`nav-btn-${tabName}`).className = "flex-1 py-2 font-semibold rounded-lg bg-stone-100 text-leather-dark text-center transition";
+                this.render();
+            }
+
+            render() {
+                this.renderNetWorth();
+                this.renderTransactions();
+                this.renderAccounts();
+                this.renderInsights();
+                this.populateAccountDropdowns();
+            }
+
+            renderNetWorth() {
+                let totalUSD = this.accounts.reduce((acc, curr) => {
+                    return acc + (curr.currency === 'XOF' ? curr.amount / 600 : curr.amount);
+                }, 0);
+                document.getElementById('total-net-worth').innerText = `$${totalUSD.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                document.getElementById('account-summary-count').innerText = `${this.accounts.length} comptes actifs`;
+            }
+
+            renderTransactions() {
+                const container = document.getElementById('transactions-list');
+                const filterText = document.getElementById('search-input')?.value.toLowerCase() || '';
+                const filterAcc = document.getElementById('filter-account')?.value || '';
+
+                const filtered = this.transactions.filter(tx => {
+                    const matchText = (tx.payee + tx.category + (tx.note || '')).toLowerCase().includes(filterText);
+                    const matchAcc = filterAcc === '' || tx.account === filterAcc;
+                    return matchText && matchAcc;
+                });
+
+                if (filtered.length === 0) {
+                    container.innerHTML = `<div class="p-6 text-center text-stone-400 text-xs sm:text-sm">Aucune transaction trouvée.</div>`;
+                    return;
+                }
+
+                container.innerHTML = filtered.map(tx => `
+                    <div class="p-3 sm:p-4 flex justify-between items-center hover:bg-stone-50 transition">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-leather-light/20 flex items-center justify-center text-leather-dark font-bold text-xs sm:text-sm">
+                                ${tx.category.charAt(0)}
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-xs sm:text-sm text-stone-800">${tx.payee}</h4>
+                                <p class="text-[10px] sm:text-xs text-stone-500">${tx.account} • ${tx.category} ${tx.note ? '• ' + tx.note : ''}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="font-bold text-xs sm:text-sm ${tx.amount >= 0 ? 'text-emerald-600' : 'text-stone-800'}">
+                                ${tx.amount >= 0 ? '+' : ''}${tx.amount.toLocaleString('fr-FR')}
+                            </span>
+                            <div class="flex space-x-1">
+                                <button onclick="app.editTransaction(${tx.id})" class="text-stone-400 hover:text-stone-700 text-xs px-1">✏️</button>
+                                <button onclick="app.deleteTransaction(${tx.id})" class="text-stone-400 hover:text-red-600 text-xs px-1">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            renderAccounts() {
+                const container = document.getElementById('accounts-grid');
+                container.innerHTML = this.accounts.map(acc => `
+                    <div class="leather-card p-4 rounded-xl shadow-md">
+                        <p class="text-[10px] sm:text-xs text-leather-accent uppercase font-medium">Compte</p>
+                        <h4 class="font-bold text-base sm:text-lg mt-0.5">${acc.name}</h4>
+                        <p class="text-xl sm:text-2xl font-extrabold mt-2">${acc.amount.toLocaleString('fr-FR')} <span class="text-xs font-normal">${acc.currency}</span></p>
+                    </div>
+                `).join('');
+            }
+
+            renderInsights() {
+                document.getElementById('liquidity-metrics').innerHTML = `
+                    <div class="flex justify-between py-1 border-b border-stone-100">
+                        <span class="text-stone-600">Liquidité Totale Estimée:</span>
+                        <span class="font-bold text-stone-800">Disponible</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-stone-100">
+                        <span class="text-stone-600">Règles de Devise:</span>
+                        <span class="font-bold text-stone-800">Automatique (CFA / USD)</span>
+                    </div>
+                `;
+
+                document.getElementById('category-insights').innerHTML = `
+                    <div class="flex justify-between py-1 border-b border-stone-100">
+                        <span class="text-stone-600">Famille:</span>
+                        <span class="font-bold text-stone-800">Principal poste</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-stone-100">
+                        <span class="text-stone-600">Transferts (TapTap/MoneyGram):</span>
+                        <span class="font-bold text-stone-800">Actifs</span>
+                    </div>
+                `;
+            }
+
+            populateAccountDropdowns() {
+                const selects = ['filter-account'];
+                selects.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    const currentVal = el.value;
+                    el.innerHTML = `<option value="">Tous les comptes</option>` + 
+                        this.accounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+                    el.value = currentVal;
+                });
+            }
+
+            openTransactionModal(txId = null) {
+                document.getElementById('transaction-modal').classList.remove('hidden');
+                if (txId) {
+                    const tx = this.transactions.find(t => t.id === txId);
+                    if (tx) {
+                        document.getElementById('modal-title').innerText = "Modifier la Transaction";
+                        document.getElementById('tx-id').value = tx.id;
+                        document.getElementById('tx-account').value = tx.account;
+                        document.getElementById('tx-amount').value = tx.amount;
+                        document.getElementById('tx-payee').value = tx.payee;
+                        document.getElementById('tx-category').value = tx.category;
+                        document.getElementById('tx-note').value = tx.note || '';
+                    }
+                } else {
+                    document.getElementById('modal-title').innerText = "Nouvelle Transaction";
+                    document.getElementById('transaction-form').reset();
+                    document.getElementById('tx-id').value = '';
+                }
+            }
+
+            closeTransactionModal() {
+                document.getElementById('transaction-modal').classList.add('hidden');
+            }
+
+            saveTransaction(event) {
+                event.preventDefault();
+                const idVal = document.getElementById('tx-id').value;
+                const txData = {
+                    id: idVal ? Number(idVal) : Date.now(),
+                    account: document.getElementById('tx-account').value,
+                    amount: parseFloat(document.getElementById('tx-amount').value),
+                    payee: document.getElementById('tx-payee').value,
+                    category: document.getElementById('tx-category').value,
+                    note: document.getElementById('tx-note').value,
+                    date: new Date().toISOString()
+                };
+
+                if (idVal) {
+                    const idx = this.transactions.findIndex(t => t.id === Number(idVal));
+                    if (idx !== -1) this.transactions[idx] = txData;
+                } else {
+                    this.transactions.unshift(txData);
+                }
+
+                this.saveToIndexedDB('transactions', txData);
+                this.closeTransactionModal();
+                this.render();
+            }
+
+            deleteTransaction(id) {
+                if (confirm("Voulez-vous vraiment supprimer cette transaction ?")) {
+                    this.transactions = this.transactions.filter(t => t.id !== id);
+                    this.deleteFromIndexedDB('transactions', id);
+                    this.render();
+                }
+            }
+
+            filterTransactions() {
+                this.renderTransactions();
+            }
+
+            async toggleSyncMode() {
+                const btn = document.getElementById('sync-btn');
+                const dot = document.getElementById('sync-status-dot');
+                const txt = document.getElementById('sync-status-text');
+                const time = document.getElementById('last-sync-time');
+
+                if (window.isFirebaseInitialized) {
+                    btn.innerText = "Synchronisation...";
+                    try {
+                        const colRef = window.dbOps.collection(window.db, "transactions");
+                        for (let tx of this.transactions) {
+                            await window.dbOps.setDoc(window.dbOps.doc(window.db, "transactions", String(tx.id)), tx);
+                        }
+                        dot.className = "w-2 h-2 rounded-full bg-emerald-500 inline-block";
+                        txt.innerText = "Synchronisé avec le Cloud";
+                        time.innerText = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                        btn.innerText = "Synchronisé";
+                    } catch (e) {
+                        console.error(e);
+                        alert("Erreur de synchronisation réseau.");
+                        btn.innerText = "Réessayer";
+                    }
+                } else {
+                    alert("Mode hors-ligne actif : Les données sont enregistrées en local en toute sécurité sur votre appareil via IndexedDB.");
+                }
+            }
+
+            setupSyncListener() {
+                window.addEventListener('online', () => {
+                    document.getElementById('sync-status-text').innerText = "Connexion rétablie (Prêt à synchro)";
+                    document.getElementById('sync-status-dot').className = "w-2 h-2 rounded-full bg-emerald-400 inline-block";
+                });
+                window.addEventListener('offline', () => {
+                    document.getElementById('sync-status-text').innerText = "Mode Hors Ligne (IndexedDB)";
+                    document.getElementById('sync-status-dot').className = "w-2 h-2 rounded-full bg-amber-400 inline-block";
+                });
+            }
+
+            exportPDF() {
+                window.print();
+            }
+        }
+
+        const app = new BalatecWalletApp();
+    </script>
+</body>
+</html>

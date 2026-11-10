@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f8f7f4;
+  --ink: #2a2a28;
+  --accent: #5c3a21;
+  --ink-faint: rgba(42, 42, 40, 0.08);
+  --ink-muted: rgba(42, 42, 40, 0.6);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-editorial {
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.font-mono-space {
+  font-family: 'Space Mono', monospace;
+}
+
+.editorial-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.editorial-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--ink);
+}
+
+.editorial-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-muted);
+}
+
+.editorial-btn-primary {
+  background: var(--ink);
+  color: var(--bg);
+  border: none;
+  padding: 1.25rem 2rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  width: 100%;
+  transition: opacity 0.2s;
+}
+.editorial-btn-primary:hover {
+  opacity: 0.9;
+}
+
+.editorial-search {
+  border: none;
+  border-bottom: 1px solid var(--ink);
+  background: none;
+  padding: 1rem 0;
+  width: 100%;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  font-style: italic;
+  outline: none;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(42, 42, 40, 0.2);
+  border-radius: 3px;
+}
