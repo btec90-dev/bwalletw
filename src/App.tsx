@@ -26,7 +26,8 @@ import {
   Trash2, 
   CheckCircle2, 
   Clock, 
-  Sparkles
+  Sparkles,
+  Smartphone
 } from 'lucide-react';
 
 export default function App() {
@@ -165,7 +166,7 @@ export default function App() {
 
   const pendingSyncCount = transactions.filter((t) => !t.synced).length;
   const isOnline = navigator.onLine && !settings.isSimulatedOffline;
-  const currencySymbol = CURRENCIES.find((c) => c.code === settings.currency)?.symbol || 'FCFA';
+  const currencySymbol = CURRENCIES.find((c) => c.code === settings.currency)?.symbol || 'CFA';
 
   const activeCurrencyRate = CURRENCIES.find((c) => c.code === settings.currency)?.rateToXof || 1;
   const convertToActive = (amount: number, fromCurrency: CurrencyCode) => {
@@ -211,35 +212,35 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f5f0] text-[#2c221e] font-sans selection:bg-[#92400e] selection:text-white">
+    <div className="min-h-screen bg-[#f8f5f0] text-[#2c221e] font-sans selection:bg-[#92400e] selection:text-white pb-24">
       
-      {/* Top Luxury Leather Header */}
-      <header className="bg-[#5c3a21] text-[#fdfaf6] shadow-md px-4 py-3.5 sticky top-0 z-40 border-b border-[#784f31]">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      {/* Mobile-First Sticky Header */}
+      <header className="bg-[#5c3a21] text-[#fdfaf6] shadow-md px-3.5 py-3 sticky top-0 z-40 border-b border-[#784f31]">
+        <div className="max-w-md mx-auto flex items-center justify-between gap-3">
           
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#784f31] border border-[#a16c45] flex items-center justify-center shadow-inner">
-              <span className="font-serif text-2xl font-bold tracking-wider text-[#fdfaf6]">B</span>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#784f31] border border-[#a16c45] flex items-center justify-center shadow-inner">
+              <span className="font-serif text-lg font-bold text-[#fdfaf6]">B</span>
             </div>
             <div>
-              <h1 className="font-serif text-xl font-bold tracking-wide">Balatec Wallet</h1>
-              <p className="text-[11px] text-[#e6dec9] tracking-wider uppercase">Saddle Tan & Calfskin Edition</p>
+              <h1 className="font-serif text-sm sm:text-base font-bold tracking-wide leading-tight">Balatec Wallet</h1>
+              <p className="text-[10px] text-[#e6dec9] tracking-wider">Mobile App Edition</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setIsSyncModalOpen(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium border transition cursor-pointer ${
                 isOnline
-                  ? 'bg-emerald-900/40 text-emerald-200 border-emerald-700/60 hover:bg-emerald-900/60'
-                  : 'bg-amber-900/40 text-amber-200 border-amber-700/60 hover:bg-amber-900/60'
+                  ? 'bg-emerald-900/40 text-emerald-200 border-emerald-700/60'
+                  : 'bg-amber-900/40 text-amber-200 border-amber-700/60'
               }`}
             >
-              {isOnline ? <Cloud size={14} className="text-emerald-400" /> : <CloudOff size={14} className="text-amber-400" />}
-              <span className="hidden sm:inline">{isOnline ? 'Synchronisé' : 'Hors-ligne'}</span>
+              {isOnline ? <Cloud size={12} className="text-emerald-400" /> : <CloudOff size={12} className="text-amber-400" />}
+              <span>{isOnline ? 'Sync' : 'Hors-ligne'}</span>
               {pendingSyncCount > 0 && (
-                <span className="bg-amber-500 text-stone-950 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold">
+                <span className="bg-amber-500 text-stone-950 px-1 py-0.2 rounded-full text-[9px] font-mono font-bold">
                   {pendingSyncCount}
                 </span>
               )}
@@ -248,169 +249,105 @@ export default function App() {
             <select
               value={settings.currency}
               onChange={(e) => handleUpdateSettings({ currency: e.target.value as CurrencyCode })}
-              className="px-2.5 py-1.5 bg-[#452b18] border border-[#784f31] text-[#fdfaf6] rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
+              className="px-2 py-1 bg-[#452b18] border border-[#784f31] text-[#fdfaf6] rounded-lg text-[11px] font-semibold focus:outline-none cursor-pointer"
             >
               {CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>
-                  {c.code} ({c.symbol})
+                  {c.code}
                 </option>
               ))}
             </select>
 
-            <select
-              value={settings.language}
-              onChange={(e) => handleUpdateSettings({ language: e.target.value as LanguageCode })}
-              className="px-2.5 py-1.5 bg-[#452b18] border border-[#784f31] text-[#fdfaf6] rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
-            >
-              <option value="en">EN</option>
-              <option value="fr">FR</option>
-              <option value="es">ES</option>
-              <option value="ar">AR</option>
-            </select>
-
             <button
               onClick={() => setUser({ ...user, isLocked: true })}
-              className="p-2 bg-[#452b18] border border-[#784f31] text-[#fdfaf6] hover:bg-[#321f12] rounded-xl transition cursor-pointer"
-              title="Lock App"
+              className="p-1.5 bg-[#452b18] border border-[#784f31] text-[#fdfaf6] rounded-lg transition cursor-pointer"
+              title="Verrouiller"
             >
-              <Lock size={16} />
+              <Lock size={14} />
             </button>
           </div>
 
         </div>
       </header>
 
-      {/* Navigation Sub-Bar */}
-      <nav className="bg-[#f0ebe1] border-b border-[#e2d6c3] px-4 py-2 sticky top-[65px] z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto flex items-center justify-between overflow-x-auto gap-2">
-          <div className="flex items-center gap-1 sm:gap-2">
-            {[
-              { id: 'home', label: 'Accueil & Journal', icon: HomeIcon },
-              { id: 'analytics', label: 'Analytique & Rapports', icon: BarChart3 },
-              { id: 'budgets', label: 'Budgets & Limites', icon: Wallet },
-              { id: 'payees', label: 'Bénéficiaires', icon: Users },
-              { id: 'security', label: 'Sécurité & Système', icon: Shield },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
-                    isActive
-                      ? 'bg-[#5c3a21] text-white shadow-sm'
-                      : 'text-[#5c3a21] hover:bg-[#e6dec9]/60'
-                  }`}
-                >
-                  <Icon size={15} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <button
-            onClick={() => setIsQuickAddOpen(true)}
-            className="py-2 px-4 bg-[#92400e] hover:bg-[#78350f] text-white text-xs font-bold rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer whitespace-nowrap"
-          >
-            <Plus size={16} />
-            <span>+ Ajout Rapide</span>
-          </button>
-        </div>
-      </nav>
-
-      {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+      {/* Main Container Optimized for Mobile Site */}
+      <main className="max-w-md mx-auto px-3.5 py-4 space-y-4">
         
         {/* HOME TAB */}
         {activeTab === 'home' && (
-          <div className="space-y-8">
+          <div className="space-y-4">
             
             {/* Hero Balance & Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               
               <div className="bg-gradient-to-br from-[#5c3a21] to-[#3a2313] text-[#fdfaf6] p-4 sm:p-5 rounded-2xl shadow-md border border-[#784f31] relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-28 h-28 bg-white/5 rounded-full blur-2xl pointer-events-none" />
-                <span className="text-[10px] sm:text-[11px] uppercase tracking-widest text-[#d4af37] font-semibold block mb-1">Solde Net Total</span>
-                <div className="font-serif text-xl sm:text-2xl font-bold tracking-tight font-mono mb-1.5">
+                <span className="text-sm uppercase tracking-widest text-[#d4af37] font-semibold block mb-1">Solde Net Total</span>
+                <div className="font-serif text-lg sm:text-xl font-bold tracking-tight font-mono mb-1.5">
                   {netBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })} {currencySymbol}
                 </div>
-                <div className="text-[10px] text-[#e6dec9] flex items-center gap-1">
+                <div className="text-[11px] text-[#e6dec9] flex items-center gap-1">
                   <Sparkles size={11} className="text-[#d4af37]" />
                   <span>Chiffrement local IndexedDB actif</span>
                 </div>
               </div>
 
-              <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-xs border border-[#e2d6c3] flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-stone-500 font-semibold">Revenus Totaux</span>
-                  <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                    <ArrowDownLeft size={14} />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white p-3.5 rounded-xl shadow-xs border border-[#e2d6c3] flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs uppercase tracking-wider text-stone-500 font-semibold">Revenus</span>
+                    <div className="w-6 h-6 rounded-md bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                      <ArrowDownLeft size={12} />
+                    </div>
                   </div>
+                  <div className="font-serif text-base font-bold text-emerald-800 font-mono">
+                    +{totalIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
+                  <span className="text-[10px] text-stone-400 mt-0.5">Encaissements</span>
                 </div>
-                <div className="font-serif text-lg sm:text-xl font-bold text-emerald-800 font-mono">
-                  +{totalIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })} {currencySymbol}
-                </div>
-                <span className="text-[10px] text-stone-400 mt-1">Salaires, virements et encaissements</span>
-              </div>
 
-              <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-xs border border-[#e2d6c3] flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] sm:text-[11px] uppercase tracking-wider text-stone-500 font-semibold">Dépenses Totales</span>
-                  <div className="w-7 h-7 rounded-lg bg-rose-100 text-rose-800 flex items-center justify-center">
-                    <ArrowUpRight size={14} />
+                <div className="bg-white p-3.5 rounded-xl shadow-xs border border-[#e2d6c3] flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs uppercase tracking-wider text-stone-500 font-semibold">Dépenses</span>
+                    <div className="w-6 h-6 rounded-md bg-rose-100 text-rose-800 flex items-center justify-center">
+                      <ArrowUpRight size={12} />
+                    </div>
                   </div>
+                  <div className="font-serif text-base font-bold text-rose-800 font-mono">
+                    -{totalExpense.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
+                  <span className="text-[10px] text-stone-400 mt-0.5">Charges & Sorties</span>
                 </div>
-                <div className="font-serif text-lg sm:text-xl font-bold text-rose-800 font-mono">
-                  -{totalExpense.toLocaleString(undefined, { maximumFractionDigits: 0 })} {currencySymbol}
-                </div>
-                <span className="text-[10px] text-stone-400 mt-1">Famille, utilitaires et charges</span>
               </div>
 
             </div>
 
             {/* Recent Ledger Section */}
-            <div className="bg-white rounded-3xl shadow-md border border-[#e2d6c3] overflow-hidden">
-              <div className="p-6 border-b border-[#e2d6c3] flex flex-wrap items-center justify-between gap-4 bg-[#fbf9f5]">
+            <div className="bg-white rounded-2xl shadow-sm border border-[#e2d6c3] overflow-hidden">
+              <div className="p-3.5 border-b border-[#e2d6c3] flex flex-wrap items-center justify-between gap-2 bg-[#fbf9f5]">
                 <div>
-                  <h3 className="font-serif text-xl font-bold text-[#5c3a21]">Journal des Transactions Récentes</h3>
-                  <p className="text-xs text-stone-500">Toutes les opérations enregistrées en mode hors-ligne</p>
+                  <h3 className="font-serif text-sm font-bold text-[#5c3a21]">Transactions Récentes</h3>
                 </div>
 
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-stone-400">
-                      <Search size={16} />
+                    <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center text-stone-400">
+                      <Search size={12} />
                     </span>
                     <input
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Rechercher..."
-                      className="pl-9 pr-4 py-2 bg-white rounded-xl border border-stone-300 text-xs text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#5c3a21]"
+                      className="pl-7 pr-3 py-1 bg-white rounded-lg border border-stone-300 text-[11px] text-stone-800 focus:outline-none focus:ring-1 focus:ring-[#5c3a21] w-28 sm:w-auto"
                     />
-                  </div>
-
-                  <div className="flex bg-stone-200/70 p-1 rounded-xl text-xs font-semibold">
-                    {(['all', 'expense', 'income'] as const).map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => setFilterType(type)}
-                        className={`px-3 py-1.5 rounded-lg transition cursor-pointer capitalize ${
-                          filterType === type ? 'bg-[#5c3a21] text-white shadow-xs' : 'text-stone-700'
-                        }`}
-                      >
-                        {type === 'all' ? 'Tous' : type === 'expense' ? 'Dépenses' : 'Revenus'}
-                      </button>
-                    ))}
                   </div>
                 </div>
               </div>
 
               {filteredTransactions.length === 0 ? (
-                <div className="p-16 text-center text-stone-500 text-sm">
-                  Aucune transaction ne correspond à votre recherche.
+                <div className="p-8 text-center text-stone-400 text-xs">
+                  Aucune transaction récente.
                 </div>
               ) : (
                 <div className="divide-y divide-stone-100">
@@ -419,43 +356,38 @@ export default function App() {
                     const isIncome = tx.type === 'income';
 
                     return (
-                      <div key={tx.id} className="p-5 flex items-center justify-between gap-4 hover:bg-stone-50/80 transition">
-                        <div className="flex items-center gap-4">
+                      <div key={tx.id} className="p-3 flex items-center justify-between gap-3 hover:bg-stone-50 transition">
+                        <div className="flex items-center gap-3">
                           <div
-                            className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-xs ${
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-xs ${
                               isExpense ? 'bg-rose-100 text-rose-800' : isIncome ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
                             }`}
                           >
-                            {isExpense ? <ArrowUpRight size={22} /> : <ArrowDownLeft size={22} />}
+                            {isExpense ? <ArrowUpRight size={16} /> : <ArrowDownLeft size={16} />}
                           </div>
 
                           <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-stone-900 text-base">{tx.payeeName}</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-stone-900 text-xs">{tx.payeeName}</span>
                               {!tx.synced ? (
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-100 text-amber-800 flex items-center gap-1">
-                                  <Clock size={10} /> En attente
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-amber-100 text-amber-800">
+                                  En attente
                                 </span>
                               ) : (
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 text-emerald-700 flex items-center gap-1">
-                                  <CheckCircle2 size={10} /> Synchronisé
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-emerald-50 text-emerald-700">
+                                  Sync
                                 </span>
                               )}
                             </div>
-                            <div className="text-xs text-stone-500 mt-0.5 flex items-center gap-2">
-                              <span className="font-medium text-stone-700">{tx.category} → {tx.subcategory}</span>
-                              <span>•</span>
-                              <span>{tx.paymentMethod}</span>
-                              <span>•</span>
-                              <span className="font-mono">{tx.date}</span>
+                            <div className="text-[10px] text-stone-500 mt-0.5">
+                              {tx.category} • {tx.date}
                             </div>
-                            {tx.memo && <p className="text-xs text-stone-400 italic mt-1">"{tx.memo}"</p>}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-3">
                           <span
-                            className={`font-mono text-lg font-bold ${
+                            className={`font-mono text-xs font-bold ${
                               isExpense ? 'text-rose-700' : isIncome ? 'text-emerald-700' : 'text-blue-700'
                             }`}
                           >
@@ -464,10 +396,10 @@ export default function App() {
 
                           <button
                             onClick={() => handleDeleteTransaction(tx.id)}
-                            className="p-2.5 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                            className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
                             title="Supprimer"
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </div>
@@ -480,16 +412,16 @@ export default function App() {
           </div>
         )}
 
-        {/* ANALYTICS & ALL TRANSACTIONS TAB */}
+        {/* ANALYTICS TAB */}
         {activeTab === 'analytics' && (
-          <div className="space-y-8">
+          <div className="space-y-4">
             <AnalyticsView transactions={transactions} settings={settings} onDeleteTransaction={handleDeleteTransaction} />
           </div>
         )}
 
         {/* BUDGETS TAB */}
         {activeTab === 'budgets' && (
-          <div className="space-y-8">
+          <div className="space-y-4">
             <BudgetsView
               budgets={budgets}
               transactions={transactions}
@@ -502,7 +434,7 @@ export default function App() {
 
         {/* PAYEES TAB */}
         {activeTab === 'payees' && (
-          <div className="space-y-8">
+          <div className="space-y-4">
             <PayeesView
               payees={payees}
               onSavePayee={handleSavePayee}
@@ -514,7 +446,7 @@ export default function App() {
 
         {/* SECURITY TAB */}
         {activeTab === 'security' && (
-          <div className="space-y-8">
+          <div className="space-y-4">
             <SecuritySettingsView
               user={user}
               settings={settings}
@@ -528,14 +460,71 @@ export default function App() {
 
       </main>
 
-      {/* Footer */}
-      <footer className="bg-[#5c3a21] text-[#e6dec9] py-6 px-4 mt-16 border-t border-[#784f31] text-center text-xs">
-        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
-          <span>Balatec Wallet — Offline-First Multi-Currency Ledger</span>
-          <span>v1.4.2026 • Saddle Tan & Calfskin Edition</span>
-          <span>Encrypted Local Storage (IndexedDB)</span>
+      {/* Sticky Bottom Navigation Sheet for Mobile */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#e2d6c3] px-3 py-1.5 shadow-lg">
+        <div className="max-w-md mx-auto flex items-center justify-between">
+          
+          <button
+            onClick={() => setActiveTab('home')}
+            className={`flex flex-col items-center gap-0.5 p-1 rounded-xl transition cursor-pointer ${
+              activeTab === 'home' ? 'text-[#5c3a21] font-bold scale-105' : 'text-stone-400 hover:text-stone-700'
+            }`}
+          >
+            <HomeIcon size={18} />
+            <span className="text-[9px]">Accueil</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`flex flex-col items-center gap-0.5 p-1 rounded-xl transition cursor-pointer ${
+              activeTab === 'analytics' ? 'text-[#5c3a21] font-bold scale-105' : 'text-stone-400 hover:text-stone-700'
+            }`}
+          >
+            <BarChart3 size={18} />
+            <span className="text-[9px]">Analytique</span>
+          </button>
+
+          {/* Quick Add Floating Button in Nav */}
+          <button
+            onClick={() => setIsQuickAddOpen(true)}
+            className="flex flex-col items-center justify-center -mt-5 bg-[#5c3a21] hover:bg-[#452b18] text-white w-12 h-12 rounded-full shadow-lg transition transform hover:scale-105 cursor-pointer border-3 border-white"
+            title="Ajout Rapide"
+          >
+            <Plus size={24} />
+          </button>
+
+          <button
+            onClick={() => setActiveTab('budgets')}
+            className={`flex flex-col items-center gap-0.5 p-1 rounded-xl transition cursor-pointer ${
+              activeTab === 'budgets' ? 'text-[#5c3a21] font-bold scale-105' : 'text-stone-400 hover:text-stone-700'
+            }`}
+          >
+            <Wallet size={18} />
+            <span className="text-[9px]">Budgets</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('payees')}
+            className={`flex flex-col items-center gap-0.5 p-1 rounded-xl transition cursor-pointer ${
+              activeTab === 'payees' ? 'text-[#5c3a21] font-bold scale-105' : 'text-stone-400 hover:text-stone-700'
+            }`}
+          >
+            <Users size={18} />
+            <span className="text-[9px]">Bénéficiaires</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`flex flex-col items-center gap-0.5 p-1 rounded-xl transition cursor-pointer ${
+              activeTab === 'security' ? 'text-[#5c3a21] font-bold scale-105' : 'text-stone-400 hover:text-stone-700'
+            }`}
+          >
+            <Shield size={18} />
+            <span className="text-[9px]">Sécurité</span>
+          </button>
+
         </div>
-      </footer>
+      </nav>
 
       <QuickAddModal
         isOpen={isQuickAddOpen}
